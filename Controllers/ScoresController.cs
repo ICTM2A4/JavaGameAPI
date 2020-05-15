@@ -144,9 +144,13 @@ namespace JavaGameAPI.Controllers
 
         // DELETE: api/Scores/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Score>> DeleteScore(int id)
+        public async Task<ActionResult<GetScore>> DeleteScore(int id)
         {
-            var score = await _context.Score.FindAsync(id);
+            var score = await _context.Score
+                 .Include(s => s.User)
+                 .Include(s => s.ScoredOn)
+                 .FirstOrDefaultAsync(s => s.ID == id);
+
             if (score == null)
             {
                 return NotFound();
@@ -155,7 +159,7 @@ namespace JavaGameAPI.Controllers
             _context.Score.Remove(score);
             await _context.SaveChangesAsync();
 
-            return score;
+            return ConvertGetScoreDTO(score);
         }
 
         private bool ScoreExists(int id)

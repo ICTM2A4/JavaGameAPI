@@ -114,9 +114,12 @@ namespace JavaGameAPI.Controllers
 
         // DELETE: api/Levels/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Level>> DeleteLevel(int id)
+        public async Task<ActionResult<GetLevel>> DeleteLevel(int id)
         {
-            var level = await _context.Level.FindAsync(id);
+            var level = await _context.Level
+                .Include(l => l.Creator)
+                .FirstOrDefaultAsync(l => l.ID == id);
+
             if (level == null)
             {
                 return NotFound();
@@ -125,7 +128,7 @@ namespace JavaGameAPI.Controllers
             _context.Level.Remove(level);
             await _context.SaveChangesAsync();
 
-            return level;
+            return ConvertGetLevelDTO(level);
         }
 
         private bool LevelExists(int id)
