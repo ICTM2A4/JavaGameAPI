@@ -15,6 +15,7 @@ namespace JavaGameAPI.Models
         public string Content { get; set; }
 
         // References
+        [Required]
         public User Creator { get; set; }
 
         public List<Score> Scores { get; set; } = new List<Score>();

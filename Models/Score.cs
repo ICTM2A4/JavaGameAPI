@@ -14,8 +14,10 @@ namespace JavaGameAPI.Models
 
 
         // References
+        [Required]
         public User User { get; set; }
 
+        [Required]
         public Level ScoredOn { get; set; }
     }
 }
