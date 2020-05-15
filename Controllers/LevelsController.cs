@@ -61,6 +61,12 @@ namespace JavaGameAPI.Controllers
             level.Content = levelDTO.Content;
             level.Creator = await _context.User.FirstOrDefaultAsync(u => u.id == levelDTO.CreatorID);
 
+            if (level.Creator == null)
+            {
+                // User of ScoredOn bestaan niet, bad request.
+                return BadRequest();
+            }
+
             _context.Entry(level).State = EntityState.Modified;
 
             try
@@ -94,6 +100,11 @@ namespace JavaGameAPI.Controllers
                 Creator = await _context.User.FirstOrDefaultAsync(u => u.id == levelDTO.CreatorID)
             };
 
+            if (level.Creator == null)
+            {
+                // User of ScoredOn bestaan niet, bad request.
+                return BadRequest();
+            }
 
             _context.Level.Add(level);
             await _context.SaveChangesAsync();
