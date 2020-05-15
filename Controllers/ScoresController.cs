@@ -1,4 +1,5 @@
 ﻿using JavaGameAPI.DTO;
+using JavaGameAPI.Migrations;
 using JavaGameAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -90,6 +91,12 @@ namespace JavaGameAPI.Controllers
             score.User = await _context.User.FirstOrDefaultAsync(u => u.id == scoreDTO.UserID);
             score.ScoredOn = await _context.Level.FirstOrDefaultAsync(l => l.ID == scoreDTO.ScoredOnID);
 
+            if (score.User == null || score.ScoredOn == null)
+            {
+                // User of ScoredOn bestaan niet, bad request.
+                return BadRequest();
+            }
+
             _context.Entry(score).State = EntityState.Modified;
 
             try
@@ -123,10 +130,16 @@ namespace JavaGameAPI.Controllers
                 ScoredOn = await _context.Level.FirstOrDefaultAsync(s => s.ID == scoreDTO.ScoredOnID)
             };
 
+            if(score.User == null || score.ScoredOn == null)
+            {
+                // User of ScoredOn bestaan niet, bad request.
+                return BadRequest();
+            }
+
             _context.Score.Add(score);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetScore", new { id = score.ID }, scoreDTO);
+            return CreatedAtAction("GetScore", new { id = score.ID }, ConvertGetScoreDTO(score));
         }
 
         // DELETE: api/Scores/5
