@@ -1,8 +1,19 @@
-﻿using JavaGameAPI.Models;
+﻿using JavaGameAPI.DTO.Authentication;
+using JavaGameAPI.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Security.Policy;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace JavaGameAPI.Controllers
@@ -12,94 +23,135 @@ namespace JavaGameAPI.Controllers
     public class UsersController : ControllerBase
     {
         private readonly DatabaseContext _context;
+        private readonly AppSettings _appSettings;
 
-        public UsersController(DatabaseContext context)
+        public UsersController(DatabaseContext context, IConfiguration configuration)
         {
             _context = context;
+            _appSettings = configuration.GetSection("AppSettings").Get<AppSettings>();
         }
 
-        // GET: api/Users
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUser()
+        [AllowAnonymous]
+        [HttpPost("authenticate")]
+        public async Task<IActionResult> Authenticate([FromBody]AuthenticateUser userParam)
         {
-            return await _context.User.ToListAsync();
-        }
-
-        // GET: api/Users/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(int id)
-        {
-            var user = await _context.User.FindAsync(id);
+            var user = await _context.User.FirstOrDefaultAsync(u => u.UserName == userParam.UserName);
 
             if (user == null)
-            {
-                return NotFound();
-            }
+                return BadRequest(new { message = "Username or password is incorrect" });
 
-            return user;
+            if(!comparePasswords(user, userParam.Password))
+                return BadRequest(new { message = "Username or password is incorrect" });
+            
+            var apiUserDTO = new AuthenticateUser()
+            {
+                UserName = user.UserName,
+                Token = generateToken(_appSettings.Secret, user)
+            };
+
+            return Ok(apiUserDTO);
         }
 
-        // PUT: api/Users/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser(int id, User user)
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody]AuthenticateUser userParam)
         {
-            if (id != user.id)
+            if (userParam == null || userParam.Password == null || userParam.UserName == null)
             {
-                return BadRequest();
+                return BadRequest(new { message = "Incomplete registration object" });
             }
 
-            _context.Entry(user).State = EntityState.Modified;
+            string passwordSalt = generateRandomString();
 
-            try
+            User user = new User()
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UserExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+                UserName = userParam.UserName,
+                PasswordHash = Encoding.Default.GetString(hash(userParam.Password + passwordSalt)),
+                PasswordSalt = passwordSalt
+            };
 
-            return NoContent();
-        }
-
-        // POST: api/Users
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for
-        // more details see https://aka.ms/RazorPagesCRUD.
-        [HttpPost]
-        public async Task<ActionResult<User>> PostUser(User user)
-        {
             _context.User.Add(user);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUser", new { id = user.id }, user);
+            var userDTO = new AuthenticateUser()
+            {
+                UserName = user.UserName
+            };
+
+            return Ok(userDTO);
         }
 
-        // DELETE: api/Users/5
-        [HttpDelete("{id}")]
-        public async Task<ActionResult<User>> DeleteUser(int id)
+        // Authorization test endpoint, shouldn't work if you're not authenticated
+        [Authorize]
+        [HttpGet("authorizetest")]
+        public IActionResult AuthorizeTest()
         {
-            var user = await _context.User.FindAsync(id);
-            if (user == null)
+            return Ok("You're authorized! Your string: " + generateRandomString());
+        }
+
+        [NonAction] 
+        private bool comparePasswords(User user, string password)
+        {
+            byte[] hashedPassword = hash(password + user.PasswordSalt);
+
+            string stringHashedPassword = Encoding.Default.GetString(hashedPassword);
+
+            if(stringHashedPassword.Equals(user.PasswordHash))
             {
-                return NotFound();
+                return true;
             }
 
-            _context.User.Remove(user);
-            await _context.SaveChangesAsync();
-
-            return user;
+            return false;
         }
 
-        private bool UserExists(int id)
+        [NonAction]
+        private byte[] hash(string input)
         {
-            return _context.User.Any(e => e.id == id);
+            var hashSvc = SHA512.Create();
+
+            return hashSvc.ComputeHash(Encoding.UTF8.GetBytes(input));
+        }
+
+        [NonAction]
+        private string generateToken(string secret, User user)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(secret);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.id.ToString()),
+                    new Claim(ClaimTypes.Name, user.UserName)
+                }),
+                Expires = DateTime.UtcNow.AddDays(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
+        [NonAction]
+        private string generateRandomString()
+        {
+            int length = 7;
+
+            // creating a StringBuilder object()
+            StringBuilder str_build = new StringBuilder();
+            Random random = new Random();
+
+            char letter;
+
+            for (int i = 0; i < length; i++)
+            {
+                double flt = random.NextDouble();
+                int shift = Convert.ToInt32(Math.Floor(25 * flt));
+                letter = Convert.ToChar(shift + 65);
+                str_build.Append(letter);
+            }
+
+            return str_build.ToString();
         }
     }
 }
