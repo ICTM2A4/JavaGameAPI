@@ -2,6 +2,7 @@
 using JavaGameAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,9 +22,14 @@ namespace JavaGameAPI.Controllers
 
         // GET: api/Achievements
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<GetAchievement>>> GetAchievement()
+        public async Task<ActionResult<IEnumerable<GetAchievement>>> GetAchievement([FromQuery] int? uid)
         {
             var achievements = await _context.Achievement.ToListAsync();
+
+            if(uid != null)
+            {
+                achievements = achievements.Where(a => a.ID == uid).ToList();
+            }
 
             return achievements.Select(a => ConvertGetAchievementDTO(a)).ToList();
         }
@@ -110,6 +116,52 @@ namespace JavaGameAPI.Controllers
             await _context.SaveChangesAsync();
 
             return achievement;
+        }
+
+
+        [HttpPost("user")]
+        public async Task<ActionResult> PostAchievementToUser(GetUserAchievement userAchievementDTO)
+        {
+            var user = await _context.User.FirstOrDefaultAsync(u => u.id == userAchievementDTO.UserID);
+            var achievement = await _context.Achievement.FirstOrDefaultAsync(a => a.ID == userAchievementDTO.AchievementID);
+
+            if(user == null || achievement == null)
+            {
+                return BadRequest();
+            }
+
+            var userAchievement = new UserAchievement()
+            {
+                AchievementID = achievement.ID,
+                Achievement = achievement,
+                UserID = user.id,
+                User = user
+            };
+
+            _context.UserAchievement.Add(userAchievement);
+            await _context.SaveChangesAsync();
+
+            return Ok(userAchievementDTO);
+        }
+
+        [HttpDelete("user")]
+        public async Task<ActionResult> DeleteAchievementFromUser(GetUserAchievement userAchievementDTO)
+        {
+            var userAchiement = await _context.UserAchievement
+                .FirstOrDefaultAsync(
+                ua =>
+                ua.AchievementID == userAchievementDTO.AchievementID &&
+                ua.UserID == userAchievementDTO.UserID);
+
+            if(userAchiement == null)
+            {
+                return BadRequest();
+            }
+
+            _context.UserAchievement.Remove(userAchiement);
+            await _context.SaveChangesAsync();
+
+            return Ok();
         }
 
         private bool AchievementExists(int id)
