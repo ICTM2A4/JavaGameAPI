@@ -45,6 +45,7 @@ namespace JavaGameAPI.Controllers
             
             var apiUserDTO = new AuthenticateUser()
             {
+                ID = user.id,
                 UserName = user.UserName,
                 Token = generateToken(_appSettings.Secret, user)
             };
@@ -80,7 +81,9 @@ namespace JavaGameAPI.Controllers
 
             var userDTO = new AuthenticateUser()
             {
-                UserName = user.UserName
+                ID = user.id,
+                UserName = user.UserName,
+                Token = generateToken(_appSettings.Secret, user)
             };
 
             return Ok(userDTO);
