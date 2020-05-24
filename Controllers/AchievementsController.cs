@@ -1,4 +1,5 @@
-﻿using JavaGameAPI.Models;
+﻿using JavaGameAPI.DTO.Achievements;
+using JavaGameAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -20,14 +21,16 @@ namespace JavaGameAPI.Controllers
 
         // GET: api/Achievements
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Achievement>>> GetAchievement()
+        public async Task<ActionResult<IEnumerable<GetAchievement>>> GetAchievement()
         {
-            return await _context.Achievement.ToListAsync();
+            var achievements = await _context.Achievement.ToListAsync();
+
+            return achievements.Select(a => ConvertGetAchievementDTO(a)).ToList();
         }
 
         // GET: api/Achievements/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Achievement>> GetAchievement(int id)
+        public async Task<ActionResult<GetAchievement>> GetAchievement(int id)
         {
             var achievement = await _context.Achievement.FindAsync(id);
 
@@ -36,19 +39,27 @@ namespace JavaGameAPI.Controllers
                 return NotFound();
             }
 
-            return achievement;
+            return ConvertGetAchievementDTO(achievement);
         }
 
         // PUT: api/Achievements/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutAchievement(int id, Achievement achievement)
+        public async Task<IActionResult> PutAchievement(int id, GetAchievement achievementDTO)
         {
-            if (id != achievement.ID)
+            if (id != achievementDTO.ID)
             {
                 return BadRequest();
             }
 
-            _context.Entry(achievement).State = EntityState.Modified;
+            var achievement = await _context.Achievement.FirstOrDefaultAsync(a => a.ID == id);
+
+            if(achievement == null)
+            {
+                return BadRequest();
+            }
+
+            achievement.Name = achievementDTO.Name;
+            achievement.Description = achievementDTO.Description;
 
             try
             {
@@ -71,12 +82,18 @@ namespace JavaGameAPI.Controllers
 
         // POST: api/Achievements
         [HttpPost]
-        public async Task<ActionResult<Achievement>> PostAchievement(Achievement achievement)
+        public async Task<ActionResult<GetAchievement>> PostAchievement(GetAchievement achievementDTO)
         {
+            var achievement = new Achievement()
+            {
+                Name = achievementDTO.Name,
+                Description = achievementDTO.Description
+            };
+
             _context.Achievement.Add(achievement);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetAchievement", new { id = achievement.ID }, achievement);
+            return CreatedAtAction("GetAchievement", new { id = achievement.ID }, ConvertGetAchievementDTO(achievement));
         }
 
         // DELETE: api/Achievements/5
@@ -98,6 +115,16 @@ namespace JavaGameAPI.Controllers
         private bool AchievementExists(int id)
         {
             return _context.Achievement.Any(e => e.ID == id);
+        }
+
+        private GetAchievement ConvertGetAchievementDTO(Achievement achievement)
+        {
+            return new GetAchievement()
+            {
+                ID = achievement.ID,
+                Name = achievement.Name,
+                Description = achievement.Description
+            };
         }
     }
 }

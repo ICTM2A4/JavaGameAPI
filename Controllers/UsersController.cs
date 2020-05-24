@@ -63,6 +63,11 @@ namespace JavaGameAPI.Controllers
 
             string passwordSalt = generateRandomString();
 
+            if(_context.User.FirstOrDefault(u => u.UserName == userParam.UserName) != null)
+            {
+                return BadRequest("A user with this username already exists");
+            }
+
             User user = new User()
             {
                 UserName = userParam.UserName,
