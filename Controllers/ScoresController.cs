@@ -84,7 +84,9 @@ namespace JavaGameAPI.Controllers
                 .Include(s => s.User)
                 .ToListAsync();
 
-            return highScoreGroup.Select(hs => ConvertGetScoreDTO(hs)).ToList();
+            return highScoreGroup.Select(hs => ConvertGetScoreDTO(hs))
+                                .OrderByDescending(s => s.ScoreAmount)
+                                .ToList();
         }
 
         // PUT: api/Scores/5
