@@ -25,8 +25,7 @@ namespace JavaGameAPI.Controllers
         {
             var levels = await _context.Level.Include(l => l.Creator).ToListAsync();
 
-
-            return levels.Select(l => ConvertGetLevelDTO(l)).ToList();
+            return levels.Select(l => convertGetLevelDTO(l)).ToList();
         }
 
         // GET: api/Levels/5
@@ -42,7 +41,7 @@ namespace JavaGameAPI.Controllers
                 return NotFound();
             }
 
-            return ConvertGetLevelDTO(level);
+            return convertGetLevelDTO(level);
         }
 
         // PUT: api/Levels/5
@@ -109,7 +108,7 @@ namespace JavaGameAPI.Controllers
             _context.Level.Add(level);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetLevel", new { id = level.ID }, ConvertGetLevelDTO(level));
+            return CreatedAtAction("GetLevel", new { id = level.ID }, convertGetLevelDTO(level));
         }
 
         // DELETE: api/Levels/5
@@ -128,7 +127,7 @@ namespace JavaGameAPI.Controllers
             _context.Level.Remove(level);
             await _context.SaveChangesAsync();
 
-            return ConvertGetLevelDTO(level);
+            return convertGetLevelDTO(level);
         }
 
         private bool LevelExists(int id)
@@ -136,7 +135,7 @@ namespace JavaGameAPI.Controllers
             return _context.Level.Any(e => e.ID == id);
         }
 
-        private GetLevel ConvertGetLevelDTO(Level level)
+        private GetLevel convertGetLevelDTO(Level level)
         {
             return new GetLevel()
             {

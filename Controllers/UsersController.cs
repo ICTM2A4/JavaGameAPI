@@ -1,4 +1,5 @@
 ﻿using JavaGameAPI.DTO.Authentication;
+using JavaGameAPI.DTO.Users;
 using JavaGameAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
@@ -33,16 +34,16 @@ namespace JavaGameAPI.Controllers
 
         [AllowAnonymous]
         [HttpPost("authenticate")]
-        public async Task<IActionResult> Authenticate([FromBody]AuthenticateUser userParam)
+        public async Task<IActionResult> Authenticate([FromBody] AuthenticateUser userParam)
         {
             var user = await _context.User.FirstOrDefaultAsync(u => u.UserName == userParam.UserName);
 
             if (user == null)
                 return BadRequest(new { message = "Username or password is incorrect" });
 
-            if(!comparePasswords(user, userParam.Password))
+            if (!comparePasswords(user, userParam.Password))
                 return BadRequest(new { message = "Username or password is incorrect" });
-            
+
             var apiUserDTO = new AuthenticateUser()
             {
                 ID = user.id,
@@ -51,6 +52,15 @@ namespace JavaGameAPI.Controllers
             };
 
             return Ok(apiUserDTO);
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<GetUser>>> GetUser()
+        {
+            var users = await _context.User.ToListAsync();
+
+            return users.Select(u => convertGetUserDto(u)).ToList();
         }
 
         [AllowAnonymous]
@@ -160,6 +170,16 @@ namespace JavaGameAPI.Controllers
             }
 
             return str_build.ToString();
+        }
+
+        [NonAction]
+        private GetUser convertGetUserDto(User user)
+        {
+            return new GetUser()
+            {
+                ID = user.id,
+                UserName = user.UserName
+            };
         }
     }
 }
