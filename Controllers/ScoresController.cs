@@ -75,6 +75,18 @@ namespace JavaGameAPI.Controllers
             return ConvertGetScoreDTO(score);
         }
 
+        [HttpGet("topscores/{lid}")]
+        public async Task<ActionResult<IEnumerable<GetScore>>> GetHighScores(int lid)
+        {
+            var highScoreGroup = await _context.Score
+                .FromSqlRaw("SELECT ID, MAX(ScoreAmount) AS 'ScoreAmount', Timestamp, Userid, ScoredOnID from javagameapi.score WHERE ScoredOnID = " + lid +" GROUP BY UserID ORDER BY ScoreAmount DESC")
+                .Include(s => s.ScoredOn)
+                .Include(s => s.User)
+                .ToListAsync();
+
+            return highScoreGroup.Select(hs => ConvertGetScoreDTO(hs)).ToList();
+        }
+
         // PUT: api/Scores/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutScore(int id, PostScore scoreDTO)
