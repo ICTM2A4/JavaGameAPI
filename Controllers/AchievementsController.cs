@@ -3,6 +3,7 @@ using JavaGameAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.VisualStudio.Web.CodeGeneration;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,11 +25,11 @@ namespace JavaGameAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GetAchievement>>> GetAchievement([FromQuery] int? uid)
         {
-            var achievements = await _context.Achievement.ToListAsync();
+            var achievements = await _context.Achievement.Include(a => a.UserAchievements).ToListAsync();
 
             if(uid != null)
             {
-                achievements = achievements.Where(a => a.ID == uid).ToList();
+                achievements = achievements.Where(a => a.UserAchievements.Any(ua => ua.UserID == uid)).ToList();
             }
 
             return achievements.Select(a => ConvertGetAchievementDTO(a)).ToList();
