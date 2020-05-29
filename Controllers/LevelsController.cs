@@ -1,5 +1,6 @@
 ﻿using JavaGameAPI.DTO.Levels;
 using JavaGameAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -45,6 +46,7 @@ namespace JavaGameAPI.Controllers
         }
 
         // PUT: api/Levels/5
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> PutLevel(int id, PostLevel levelDTO)
         {
@@ -88,6 +90,7 @@ namespace JavaGameAPI.Controllers
         }
 
         // POST: api/Levels
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<Level>> PostLevel(PostLevel levelDTO)
         {
@@ -112,6 +115,7 @@ namespace JavaGameAPI.Controllers
         }
 
         // DELETE: api/Levels/5
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult<GetLevel>> DeleteLevel(int id)
         {
@@ -135,6 +139,7 @@ namespace JavaGameAPI.Controllers
             return _context.Level.Any(e => e.ID == id);
         }
 
+        [NonAction]
         private GetLevel convertGetLevelDTO(Level level)
         {
             return new GetLevel()

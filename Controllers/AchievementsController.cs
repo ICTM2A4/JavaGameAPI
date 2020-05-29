@@ -1,5 +1,6 @@
 ﻿using JavaGameAPI.DTO.Achievements;
 using JavaGameAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -50,6 +51,7 @@ namespace JavaGameAPI.Controllers
         }
 
         // PUT: api/Achievements/5
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> PutAchievement(int id, GetAchievement achievementDTO)
         {
@@ -88,6 +90,7 @@ namespace JavaGameAPI.Controllers
         }
 
         // POST: api/Achievements
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<GetAchievement>> PostAchievement(GetAchievement achievementDTO)
         {
@@ -104,6 +107,7 @@ namespace JavaGameAPI.Controllers
         }
 
         // DELETE: api/Achievements/5
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult<Achievement>> DeleteAchievement(int id)
         {
@@ -119,7 +123,7 @@ namespace JavaGameAPI.Controllers
             return achievement;
         }
 
-
+        [Authorize]
         [HttpPost("user")]
         public async Task<ActionResult> PostAchievementToUser(GetUserAchievement userAchievementDTO)
         {
@@ -145,6 +149,7 @@ namespace JavaGameAPI.Controllers
             return Ok(userAchievementDTO);
         }
 
+        [Authorize]
         [HttpDelete("user")]
         public async Task<ActionResult> DeleteAchievementFromUser(GetUserAchievement userAchievementDTO)
         {

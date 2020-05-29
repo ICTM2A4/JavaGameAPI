@@ -1,6 +1,7 @@
 ﻿using JavaGameAPI.DTO;
 using JavaGameAPI.Migrations;
 using JavaGameAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -90,6 +91,7 @@ namespace JavaGameAPI.Controllers
         }
 
         // PUT: api/Scores/5
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> PutScore(int id, PostScore scoreDTO)
         {
@@ -133,6 +135,7 @@ namespace JavaGameAPI.Controllers
         }
 
         // POST: api/Scores
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<Score>> PostScore(PostScore scoreDTO)
         {
@@ -157,6 +160,7 @@ namespace JavaGameAPI.Controllers
         }
 
         // DELETE: api/Scores/5
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult<GetScore>> DeleteScore(int id)
         {
